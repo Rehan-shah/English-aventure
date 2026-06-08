@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Portfolio - ENGL 131</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --black: #0a0a0f;
+            --dark: #12121a;
+            --panel: #1a1a26;
+            --border: #2a2a40;
+            --cyan: #00f5ff;
+            --yellow: #ffe600;
+            --magenta: #ff2d78;
+            --green: #39ff14;
+            --orange: #ff6b00;
+            --purple: #9b30ff;
+            --blue: #1e90ff;
+            --white: #f0f0f8;
+            --dim: #8888aa;
+            --pixel: 'Press Start 2P', monospace;
+            --body: 'DM Sans', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: var(--body);
+            font-size: 16px;
+            line-height: 1.75;
+            overflow-x: hidden;
+        }
+
+        #tetris-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .falling-piece {
+            position: absolute;
+            top: -120px;
+            opacity: 0.10;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(360deg);
+            }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+            pointer-events: none;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 20px;
+            padding: 80px 0 60px;
+        }
+
+        .hero-eyebrow {
+            font-family: var(--pixel);
+            font-size: 9px;
+            color: var(--cyan);
+            letter-spacing: 3px;
+        }
+
+        .hero-title {
+            font-family: var(--pixel);
+            font-size: clamp(18px, 4vw, 36px);
+            line-height: 1.5;
+            color: var(--white);
+            text-shadow: 0 0 20px var(--cyan), 0 0 60px rgba(0, 245, 255, 0.3);
+        }
+
+        .hero-title span {
+            color: var(--yellow);
+        }
+
+        .hero-subtitle {
+            font-size: 17px;
+            color: var(--dim);
+            max-width: 500px;
+            font-weight: 300;
+            font-style: italic;
+        }
+
+        .score-row {
+            display: flex;
+            gap: 32px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .score-item {
+            font-family: var(--pixel);
+            font-size: 8px;
+            text-align: center;
+            line-height: 2.2;
+        }
+
+        .score-label {
+            color: var(--dim);
+        }
+
+        .score-val {
+            color: var(--green);
+        }
+
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.94);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+        }
+
+        nav a {
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--dim);
+            text-decoration: none;
+            padding: 14px 16px;
+            border-right: 1px solid var(--border);
+            transition: color 0.2s, background 0.2s;
+            white-space: nowrap;
+        }
+
+        nav a:first-child {
+            border-left: 1px solid var(--border);
+        }
+
+        nav a:hover {
+            color: var(--cyan);
+            background: rgba(0, 245, 255, 0.05);
+        }
+
+        .tetro-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 64px 0 36px;
+        }
+
+        .tetro-divider .line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        .tetro-divider .label {
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--cyan);
+            white-space: nowrap;
+            padding: 6px 14px;
+            border: 1px solid var(--cyan);
+            box-shadow: 0 0 10px rgba(0, 245, 255, 0.15);
+        }
+
+        .section-title {
+            font-family: var(--pixel);
+            font-size: 10px;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .section-num {
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--dim);
+            margin-bottom: 22px;
+        }
+
+        /* INTRO */
+        .intro-block {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--yellow);
+            padding: 32px 36px;
+            position: relative;
+        }
+
+        .intro-block::before {
+            content: 'INTRO';
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--yellow);
+            position: absolute;
+            top: 12px;
+            right: 16px;
+        }
+
+        .intro-block p {
+            font-size: 15px;
+            font-weight: 300;
+            color: var(--white);
+            line-height: 1.9;
+        }
+
+        /* PIECE CARD */
+        .piece-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            margin-bottom: 40px;
+            overflow: hidden;
+        }
+
+        .piece-header {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .piece-color-bar {
+            width: 6px;
+            flex-shrink: 0;
+        }
+
+        .piece-header-inner {
+            padding: 20px 24px;
+            flex: 1;
+        }
+
+        .piece-tag {
+            font-family: var(--pixel);
+            font-size: 7px;
+            margin-bottom: 8px;
+        }
+
+        .piece-title {
+            font-size: 19px;
+            font-weight: 500;
+            line-height: 1.35;
+        }
+
+        .piece-meta {
+            font-size: 13px;
+            color: var(--dim);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .piece-shape {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            border-left: 1px solid var(--border);
+        }
+
+        .piece-body {
+            padding: 28px 30px;
+        }
+
+        .piece-body>h3 {
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--dim);
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .piece-body p {
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.9;
+            color: #d8d8ee;
+            margin-bottom: 14px;
+        }
+
+        .piece-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .byline {
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--dim);
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reflection-panel {
+            margin-top: 26px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--magenta);
+            padding: 22px 26px;
+        }
+
+        .reflection-panel h3 {
+            font-family: var(--pixel);
+            font-size: 7px;
+            color: var(--magenta);
+            margin-bottom: 16px;
+        }
+
+        .reflection-panel p {
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.9;
+            color: #d0d0e8;
+            margin-bottom: 14px;
+        }
+
+        .reflection-panel p:last-child {
+            margin-bottom: 0;
+        }
+
+        .works-cited {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--dim);
+            line-height: 1.8;
+        }
+
+        .works-cited p {
+            font-size: 13px;
+            color: var(--dim);
+            margin-bottom: 4px;
+        }
+
+        /* color themes */
+        .t-cyan .piece-color-bar {
+            background: var(--cyan);
+        }
+
+        .t-cyan .piece-tag {
+            color: var(--cyan);
+        }
+
+        .t-yellow .piece-color-bar {
+            background: var(--yellow);
+        }
+
+        .t-yellow .piece-tag {
+            color: var(--yellow);
+        }
+
+        /* FINAL REFLECTION */
+        .final-card {
+            background: var(--panel);
+            border: 1px solid var(--cyan);
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.07);
+            padding: 40px;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .final-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cyan), var(--purple), var(--magenta));
+        }
+
+        .final-card .section-title {
+            color: var(--cyan);
+            margin-bottom: 24px;
+        }
+
+        .final-card blockquote {
+            border-left: 3px solid var(--yellow);
+            margin: 0 0 24px;
+            padding: 12px 20px;
+            font-style: italic;
+            color: var(--yellow);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .final-card p {
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.9;
+            color: #ddddf5;
+            margin-bottom: 18px;
+        }
+
+        .final-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* COMPENDIUM */
+        .compendium-card {
+            background: var(--panel);
+            border: 1px dashed var(--border);
+            padding: 36px;
+            text-align: center;
+        }
+
+        .compendium-card .section-title {
+            color: var(--purple);
+            margin-bottom: 12px;
+        }
+
+        .compendium-card p {
+            color: var(--dim);
+            font-size: 15px;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .link-btn {
+            display: inline-block;
+            font-family: var(--pixel);
+            font-size: 8px;
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid var(--purple);
+            color: var(--purple);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .link-btn:hover {
+            background: var(--purple);
+            color: var(--black);
+            box-shadow: 0 0 20px rgba(155, 48, 255, 0.4);
+        }
+
+        .game-over {
+            text-align: center;
+            padding: 60px 0 20px;
+        }
+
+        .game-over .pixel {
+            font-family: var(--pixel);
+            font-size: 8px;
+            color: var(--dim);
+        }
+
+        .game-over .big {
+            font-family: var(--pixel);
+            font-size: 14px;
+            color: var(--yellow);
+            margin: 14px 0;
+            text-shadow: 0 0 20px rgba(255, 230, 0, 0.5);
+        }
+
+        @media (max-width: 600px) {
+            nav a {
+                font-size: 6px;
+                padding: 12px 9px;
+            }
+
+            .hero-title {
+                font-size: 16px;
+            }
+
+            .final-card,
+            .intro-block {
+                padding: 22px 18px;
+            }
+
+            .piece-body {
+                padding: 20px 18px;
+            }
+
+            .piece-shape {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="tetris-bg"></div>
+
+    <nav>
+        <a href="#intro">INTRO</a>
+        <a href="#piece1">PIECE 01</a>
+        <a href="#piece2">PIECE 02</a>
+        <a href="#reflection">REFLECTION</a>
+        <a href="#compendium">COMPENDIUM</a>
+        <a href="#release">RELEASE</a>
+    </nav>
+
+    <div class="page">
+
+        <!-- HERO -->
+        <section class="hero">
+            <div class="hero-eyebrow">ENGL 131 R &nbsp;·&nbsp; FOLKLORE GENRES &nbsp;·&nbsp; SPRING 2026</div>
+            <h1 class="hero-title">FINAL<br><span>PORTFOLIO</span></h1>
+            <p class="hero-subtitle">Rehan Shah</p>
+            <div class="score-row">
+                <div class="score-item">
+                    <div class="score-label">PLAYER</div>
+                    <div class="score-val">01</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">QUARTER</div>
+                    <div class="score-val">SPRING 26</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">PIECES</div>
+                    <div class="score-val">02</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-label">LEVEL</div>
+                    <div class="score-val">131</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTRO -->
+        <section id="intro">
+            <div class="tetro-divider">
+                <div class="line"></div>
+                <div class="label">INTRO SCREEN</div>
+                <div class="line"></div>
+            </div>
+            <div class="section-title" style="color:var(--yellow)">INTRODUCTION</div>
+            <div class="section-num">// LEVEL SELECT</div>
+            <div class="intro-block">
+                <p>In Tetris, pieces fall one at a time and you do not get to pick them. All you can do is figure out
+                    where they go. This quarter felt a lot like that. The assignments came in sequence and I could not
+                    always see how they connected: a fairy tale retold as a news article, an essay comparing a rock song
+                    to a Brothers Grimm tale, a motif activity that kept sending me back to reread things I thought I
+                    had finished. My main claim in this portfolio is that my writing improved when I stopped treating
+                    form as a rule to follow and started treating it as a choice to make, and the two showcase pieces
+                    are where that shift shows up most clearly. I want you to notice how the revisions changed what I
+                    was actually arguing, not just how I said it, and I am using feedback from Rory and specific changes
+                    to structure and word choice in both pieces as the evidence for that.</p>
+            </div>
+        </section>
+
+        <!-- PIECE 01 -->
+        <section id="piece1">
+            <div class="tetro-divider">
+                <div class="line"></div>
+                <div class="label" style="color:var(--cyan);border-color:var(--cyan)">PIECE 01 · L-BLOCK</div>
+                <div class="line"></div>
+            </div>
+            <div class="section-title" style="color:var(--cyan)">SHOWCASE PIECE 01</div>
+            <div class="section-num">// NEWS ARTICLE REVISION</div>
+
+            <div class="piece-card t-cyan">
+                <div class="piece-header">
+                    <div class="piece-color-bar"></div>
+                    <div class="piece-header-inner">
+                        <div class="piece-tag">L-BLOCK · CYAN</div>
+                        <div class="piece-title">Wolf Killed at Brick Residence After Fatal Rampage; Two Dead, Building
+                            Codes Under Review</div>
+                        <div class="piece-meta">News article revision · By Rehan Shah · Tuesday, April 15, 1890</div>
+                    </div>
+                    <div class="piece-shape">
+                        <svg width="44" height="56" viewBox="0 0 44 56">
+                            <rect x="0" y="0" width="20" height="20" rx="2" fill="var(--cyan)" opacity="0.85" />
+                            <rect x="0" y="22" width="20" height="20" rx="2" fill="var(--cyan)" opacity="0.85" />
+                            <rect x="0" y="44" width="20" height="20" rx="2" fill="var(--cyan)" opacity="0.85" />
+                            <rect x="22" y="44" width="20" height="20" rx="2" fill="var(--cyan)" opacity="0.85" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="piece-body">
+                    <h3>// REVISED PIECE</h3>
+
+                    <p>FAIRY TALE COUNTY. Two pigs are dead and a third narrowly escaped after a wolf conducted a series
+                        of targeted attacks on residential properties in the county's eastern farming district, ending
+                        Tuesday night when the animal fell into a pot of boiling water while attempting to enter a brick
+                        home through the chimney.</p>
+
+                    <p>The wolf approached each of the three residences over consecutive days, demanding entry before
+                        demolishing the structures and killing the occupants inside. The first two homes, constructed
+                        from straw and furze, offered little resistance. The third, built from brick, held.</p>
+
+                    <p>Authorities say evidence from all three sites suggests premeditation. After failing to breach the
+                        brick home by force, the wolf returned on at least three occasions, attempting to draw the
+                        resident out using food and social invitations before the fatal chimney attempt Tuesday night.
+                    </p>
+
+                    <p>"He kept coming back," the surviving pig told authorities. "Turnips, apples, a trip to the fair.
+                        He wasn't going to stop."</p>
+
+                    <p>The resident, not publicly identified, said he had placed a pot of boiling water beneath the
+                        chimney opening after anticipating the intrusion. The wolf fell in and died at the scene. No
+                        other forced entry was found.</p>
+
+                    <p>The Fairy Tale County Sheriff's Department said no charges would be filed. "Based on the
+                        evidence, this appears to be a clear case of self-defense," a spokesperson confirmed.</p>
+
+                    <p>Reaction among neighbors was divided. Several described the wolf as visibly erratic in recent
+                        weeks; others questioned whether the outcome was proportionate.</p>
+
+                    <p>"Three lives lost over a house," said one resident, who asked not to be named.</p>
+
+                    <p>County officials announced Monday they would push for updated residential building standards
+                        following the structural failures at the straw and furze properties. A public meeting is
+                        scheduled Thursday at Fairy Tale County Town Hall. Families of the two deceased could not be
+                        reached. A full investigative report is expected within weeks.</p>
+
+                    <div class="reflection-panel">
+                        <h3>REFLECTION · 01</h3>
+                        <p>My goal for this piece was to write something that actually sounded like a news article,
+                            which meant figuring out what the genre expects and making every choice fit that audience.
+                            The biggest change I made was restructuring the opening sentence. In the original version,
+                            it started with the wolf, which made him the focus of the whole story. In the revision, it
+                            starts with "Two pigs are dead," which puts the victims first and gives the reader the most
+                            important information right away. In news writing, the most serious outcome is supposed to
+                            go first, so I moved the deaths to the front before introducing who caused them.</p>
+                        <p>I also changed the headline to include "Building Codes Under Review." This makes the story
+                            feel like more than just one violent incident. It connects what happened to a community
+                            problem, which is what real local journalism does. It also sets up the closing paragraph,
+                            where officials call for a public meeting about residential building standards.</p>
+                        <p>Sentence structure was something I paid close attention to in the revision. News writing uses
+                            short, direct sentences so facts are easy to follow. In my earlier draft, some sentences
+                            were too long and tried to cover too much at once. In the revision, I split information into
+                            shorter sentences with one fact each. I also switched to active voice wherever I could.
+                            Instead of writing that the structures were demolished, I wrote that the wolf demolished
+                            them. Active voice makes sentences feel more immediate and puts responsibility on the right
+                            subject.</p>
+                        <p>One smaller change was switching "just" to "proportionate" in the community reaction
+                            paragraph. "Just" sounds like a moral judgment, which a news article is not supposed to
+                            make. "Proportionate" asks the same question but in more neutral language, which fits the
+                            genre better. Every one of these changes came from asking the same question: what would a
+                            real reader of a local newspaper expect? Keeping that audience in mind is what pushed me
+                            past fixing grammar and into actually rethinking the piece.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PIECE 02 -->
+        <section id="piece2">
+            <div class="tetro-divider">
+                <div class="line"></div>
+                <div class="label" style="color:var(--yellow);border-color:var(--yellow)">PIECE 02 · O-BLOCK</div>
+                <div class="line"></div>
+            </div>
+            <div class="section-title" style="color:var(--yellow)">SHOWCASE PIECE 02</div>
+            <div class="section-num">// COMPARATIVE ESSAY REVISION</div>
+
+            <div class="piece-card t-yellow">
+                <div class="piece-header">
+                    <div class="piece-color-bar"></div>
+                    <div class="piece-header-inner">
+                        <div class="piece-tag">O-BLOCK · YELLOW</div>
+                        <div class="piece-title">Sweet Poison: The Motif of Irresistible Entrapment in "Hotel
+                            California" and "Hansel and Gretel"</div>
+                        <div class="piece-meta">Comparative essay revision · motif analysis across folklore and popular
+                            music</div>
+                    </div>
+                    <div class="piece-shape">
+                        <svg width="44" height="44" viewBox="0 0 44 44">
+                            <rect x="0" y="0" width="20" height="20" rx="2" fill="var(--yellow)" opacity="0.85" />
+                            <rect x="22" y="0" width="20" height="20" rx="2" fill="var(--yellow)" opacity="0.85" />
+                            <rect x="0" y="22" width="20" height="20" rx="2" fill="var(--yellow)" opacity="0.85" />
+                            <rect x="22" y="22" width="20" height="20" rx="2" fill="var(--yellow)" opacity="0.85" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="piece-body">
+                    <h3>// REVISED PIECE</h3>
+
+                    <p>The most dangerous traps do not look like traps. They look like a glowing hotel off a dark desert
+                        highway, or a house made of gingerbread deep in the woods, and the reason they work is because
+                        they are offering exactly what the victim needs most. The Eagles' 1977 rock song "Hotel
+                        California" and the Brothers Grimm fairy tale "Hansel and Gretel" (1812) are both built around
+                        this idea, using the motif of temptation leading to entrapment. But they reach very different
+                        conclusions about who gets caught, and whether escape is even possible.</p>
+
+                    <p>The lure begins immediately in both texts, appearing at the exact same structural moment: right
+                        when the protagonist thinks they have found salvation. In "Hotel California," a lone traveler
+                        spots a lit-up hotel and pulls over. Warm lights, a scent in the air, a woman waving from the
+                        doorway. What looks like a perfect resting place slowly reveals itself as something he can never
+                        leave. In "Hansel and Gretel," two children abandoned in the forest stumble upon what the Grimm
+                        text describes as a cottage "built of gingerbread and covered with cakes, and the windows were
+                        of clear sugar" (Grimm, 1812). The moment they begin pulling pieces off the roof, the trap
+                        springs, because the witch built that house specifically to catch hungry children. Same motif,
+                        same structure, same devastating timing.</p>
+
+                    <p>What separates the two texts most is <em>how</em> that entrapment is felt, and both works use
+                        their own form to make the reader or listener feel it too. "Hotel California" traps its audience
+                        alongside the narrator. The chord progression loops without fully resolving; the closing guitar
+                        solo stretches on without a clean ending, giving the listener the same dizzy, circular feeling
+                        the traveler is experiencing inside the hotel. The music does not just describe the trap. It
+                        <em>is</em> the trap. "Hansel and Gretel," written for children, works differently. Its language
+                        is simple, its moral clear: the witch is evil, the children are good, and the reader knows this
+                        long before the children do. The fairy tale genre also signals from the first page that things
+                        will resolve. And they do. When Gretel shoves the witch into the oven, it feels earned and
+                        inevitable.
+                    </p>
+
+                    <p>It is worth asking why the two works arrive at such different endings, and the answer lives in
+                        context as much as in craft. The Brothers Grimm were collecting and reshaping folk tales in
+                        early 19th-century Germany, a time when stories for children carried an explicit moral function:
+                        teach the young what the world can do to the innocent, and reassure them that goodness survives.
+                        The Eagles were writing in 1970s Los Angeles, deep inside an era of disillusionment. Vietnam,
+                        Watergate, the slow burnout of the counterculture. "Hotel California" is widely read as a
+                        portrait of excess and self-destruction, where the seductive California dream curdles into
+                        something you cannot walk away from. The hopeful fairy tale and the cynical rock song are
+                        products of completely different cultural moments, and those moments are written into every
+                        line.</p>
+
+                    <p>The repetition in "Hansel and Gretel," the trail of breadcrumbs, the two abandonments, the
+                        mirrored danger and escape, creates a kind of rhythm that does pull the reader in, not unlike
+                        the looping chord structure of the song. Both works use formal repetition to reinforce the
+                        feeling of being caught in a cycle. But where the fairy tale's repetition leads somewhere
+                        (Gretel acts, the cycle breaks), the song's repetition leads nowhere. It spirals. That is the
+                        point.</p>
+
+                    <p>The biggest difference between the two texts, though, is responsibility. In "Hotel California,"
+                        the night man tells the narrator that the guests are "prisoners here of their own device" (The
+                        Eagles, 1977). The traveler chose to stop, chose to stay, kept consuming what the hotel offered.
+                        The trap worked because he wanted what it was selling. Hansel and Gretel carry no such weight.
+                        They are hungry children who were abandoned by their parents in the woods. Eating a candy house
+                        is not a moral failure. It is survival. When the witch locks Hansel in a cage to fatten him up,
+                        it is pure cruelty, not consequence.</p>
+
+                    <p>That distinction is everything. Innocence, in the world of the Brothers Grimm, can be rescued. In
+                        the world of the Eagles, desire is its own prison. Both texts use the same motif to make very
+                        different arguments about the world. One says that traps can find people who did nothing wrong,
+                        and that courage is enough to break free. The other says that some traps are built from a
+                        person's own wanting, and the most seductive ones are the hardest to leave. The motif looks
+                        different depending on who is walking into it and why. In one story, the door swings open. In
+                        the other, you can check out any time you like, but you can never leave.</p>
+
+                    <div class="works-cited">
+                        <p>The Eagles. "Hotel California." <em>Hotel California</em>, Asylum Records, 1977.</p>
+                        <p>Grimm, Jacob, and Wilhelm Grimm. "Hansel and Gretel." <em>Grimm's Fairy Tales</em>, 1812.
+                            Translated by Edgar Taylor and Marian Edwardes, Project Gutenberg, 2009.</p>
+                    </div>
+
+                    <div class="reflection-panel">
+                        <h3>REFLECTION · 02</h3>
+                        <p>My goal for this essay was to make a real argument about how two very different texts use the
+                            same motif, and to go deeper than just listing what they have in common. When I first wrote
+                            this essay, I was just trying to hit the five-paragraph format and get through it.
+                            Introduction, three body paragraphs, conclusion, done. Looking back at it now, I can see how
+                            much that structure was actually limiting what I was saying. The ideas were there, but they
+                            were getting forced into boxes that did not really fit them, and the writing felt kind of
+                            mechanical because of it.</p>
+                        <p>For this revision, the biggest thing I changed was letting the essay breathe more. Instead of
+                            locking every idea into its own paragraph with a clean transition, I tried to let the
+                            analysis move the way an actual argument moves, building on itself, circling back, making
+                            connections across sections instead of keeping everything neatly separated. The section on
+                            historical context was something Rory flagged, and she was right. I was making claims about
+                            what these works "meant" without ever stopping to ask <em>why</em> they were made in the
+                            first place. Adding that context, the Grimm Brothers writing moral tales for 19th-century
+                            children versus the Eagles capturing 1970s disillusionment, actually changed how I
+                            understood the whole comparison. It was not just two stories using the same motif. It was
+                            two completely different cultural moments producing two completely different ideas about
+                            whether people can be saved.</p>
+                        <p>I also worked through the comment about repetition and whether "Hansel and Gretel" creates an
+                            entrancing effect the way the song does. I think it does, but the key difference is that the
+                            fairy tale's repetition actually leads somewhere. The cycle breaks when Gretel acts. The
+                            song's repetition just spirals. Working that out helped me land on what ended up being the
+                            actual argument of the essay: that "the motif looks different depending on who is walking
+                            into it and why." This revision still is not perfect, but it feels a lot more like something
+                            I actually wrote instead of something I assembled.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINAL REFLECTION -->
+        <section id="reflection">
+            <div class="tetro-divider">
+                <div class="line"></div>
+                <div class="label" style="color:var(--green);border-color:var(--green)">FINAL SCREEN</div>
+                <div class="line"></div>
+            </div>
+
+            <div class="final-card">
+                <div class="section-title">FINAL REFLECTION</div>
+                <div class="section-num" style="color:var(--dim);margin-bottom:28px">// Rehan Shah · Folklore Genres ·
+                    ENGL 131</div>
+
+                <blockquote>"Stories reflect their time; they cannot help but do so."<br>- Rory, class discussion
+                </blockquote>
+
+                <p>Before this class I thought writing worked a specific way: you had something to say, you organized
+                    it, you typed it out, and if it came out messy that meant something was wrong with you specifically.
+                    The Lamott reading was the first thing that broke that down. She describes sitting down to write a
+                    food review and producing a lead paragraph a full page long, with imaginary critics on her shoulders
+                    making fun of everything she typed. I recognized that feeling immediately. I just did not know that
+                    writers who actually get published still felt it too. She calls believing in clean first drafts "the
+                    fantasy of the uninitiated," which was uncomfortable to read because that was exactly my fantasy.
+                    What made it land was that she proved her argument by the way she was writing, loose and honest and
+                    like a real person talking, which is something I had not thought of as a deliberate choice before.
+                </p>
+
+                <p>The nonfiction unit pushed that further. I assumed most texts would follow a similar academic style,
+                    which turned out to be completely wrong. Anzald&#250;a wrote in a braided essay moving between
+                    languages and identities. Halberstam opened "Low Theory" with a SpongeBob and Mr. Krabs dialogue to
+                    argue about capitalism, which I did not know what to do with at first but which worked really well
+                    once I got past the strangeness. Cohen built a whole piece around a poem, pulling from it out of
+                    order, and used photographs. Every writer found a different form, and all of them worked. That was
+                    one of the more useful things I took away: form is something you choose based on what you are trying
+                    to say, not a rule you follow because that is how writing goes.</p>
+
+                <p>The Puss in Boots comparison is probably what I think about most when I try to explain what this
+                    class did for me. The Perrault version felt cold and transactional, more like a guide to social
+                    climbing than a fairy tale, which makes sense when you think about the moment it came from. The
+                    DreamWorks version is almost the opposite: Puss wants somewhere to belong, not wealth or power,
+                    which fits with what post-9/11 America seemed to need from its stories. The Garfield version I
+                    initially thought was just badly made, but the more I sat with it the more it started to look like a
+                    parody of Perrault's earnestness. Rory kept saying stories reflect their time and cannot help but do
+                    so, and I did not really feel that until I put all three versions side by side and watched the same
+                    basic plot carry completely different meanings.</p>
+
+                <p>The bigger shift is less about specific things I learned and more about a different starting
+                    assumption. Writing is supposed to be messy at first. Form is a choice, not a given. The same story
+                    can mean completely different things depending on when it was made. And changing your mind is not a
+                    problem: it is how the thinking gets somewhere. None of that was obvious to me in September. I think
+                    those shifts will matter in other classes too, not just English ones. Knowing that form is a choice
+                    means I can ask what a piece of writing needs to do before I start, and that is a useful question in
+                    pretty much any class that asks you to write.</p>
+            </div>
+        </section>
+
+        <!-- COMPENDIUM -->
+        <section id="compendium">
+            <div class="tetro-divider">
+                <div class="line"></div>
+                <div class="label" style="color:var(--purple);border-color:var(--purple)">ARCHIVE</div>
+                <div class="line"></div>
+            </div>
+            <div class="compendium-card">
+                <div class="section-title">COMPENDIUM</div>
+                <p>All first drafts, small assignments, major projects, and one reading journal are collected in the
+                    Google Drive folder linked below.</p>
+                <a href="https://drive.google.com/drive/folders/1fl0q_zU5HTK4F7PWsgieQIUHqAbR6Jk2?usp=drive_link"
+                    class="link-btn">OPEN GOOGLE DRIVE FOLDER</a>
+            </div>
+        </section>
+
+        <!-- RELEASE FORM -->
+        <section id="release">
+            <div class="tetro-divider">
+                <div class="line"></div>
+                <div class="label" style="color:var(--orange);border-color:var(--orange)">RELEASE FORM</div>
+                <div class="line"></div>
+            </div>
+            <div class="compendium-card" style="border-color:var(--orange);border-style:solid;">
+                <div class="section-title" style="color:var(--orange)">THE RELEASE FORM</div>
+                <p style="max-width:580px;margin:0 auto 20px;">I, Rehan Shah, hereby give my consent to Rory Hughes to
+                    use my portfolio submitted for English 131 during Spring Quarter of 2026 for instructional training
+                    and modeling. I DO give consent for my name to be attached to the project. I understand that
+                    granting or not granting this release will not affect my grade in this course.</p>
+            </div>
+        </section>
+
+        <div class="game-over">
+            <div class="pixel">ENGL 131 R &nbsp;·&nbsp; FOLKLORE GENRES &nbsp;·&nbsp; SPRING 2026</div>
+            <div class="big">GAME OVER</div>
+            <div class="pixel">THANK YOU FOR PLAYING</div>
+        </div>
+
+    </div>
+
+    <script>
+        const colors = ['#00f5ff', '#ffe600', '#ff2d78', '#39ff14', '#ff6b00', '#9b30ff', '#1e90ff'];
+        const shapes = [
+            `<svg width="80" height="20" viewBox="0 0 80 20"><rect x="0" y="0" width="18" height="18" rx="2"/><rect x="20" y="0" width="18" height="18" rx="2"/><rect x="40" y="0" width="18" height="18" rx="2"/><rect x="60" y="0" width="18" height="18" rx="2"/></svg>`,
+            `<svg width="40" height="40" viewBox="0 0 40 40"><rect x="0" y="0" width="18" height="18" rx="2"/><rect x="20" y="0" width="18" height="18" rx="2"/><rect x="0" y="20" width="18" height="18" rx="2"/><rect x="20" y="20" width="18" height="18" rx="2"/></svg>`,
+            `<svg width="60" height="40" viewBox="0 0 60 40"><rect x="0" y="0" width="18" height="18" rx="2"/><rect x="20" y="0" width="18" height="18" rx="2"/><rect x="40" y="0" width="18" height="18" rx="2"/><rect x="20" y="20" width="18" height="18" rx="2"/></svg>`,
+            `<svg width="40" height="60" viewBox="0 0 40 60"><rect x="0" y="0" width="18" height="18" rx="2"/><rect x="0" y="20" width="18" height="18" rx="2"/><rect x="0" y="40" width="18" height="18" rx="2"/><rect x="20" y="40" width="18" height="18" rx="2"/></svg>`,
+            `<svg width="60" height="40" viewBox="0 0 60 40"><rect x="20" y="0" width="18" height="18" rx="2"/><rect x="40" y="0" width="18" height="18" rx="2"/><rect x="0" y="20" width="18" height="18" rx="2"/><rect x="20" y="20" width="18" height="18" rx="2"/></svg>`,
+        ];
+        const bg = document.getElementById('tetris-bg');
+        for (let i = 0; i < 18; i++) {
+            const div = document.createElement('div');
+            div.className = 'falling-piece';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            div.innerHTML = shape;
+            div.querySelector('svg').style.fill = color;
+            div.style.left = Math.random() * 100 + 'vw';
+            div.style.animationDuration = (14 + Math.random() * 20) + 's';
+            div.style.animationDelay = (-Math.random() * 28) + 's';
+            div.style.transform = `scale(${0.4 + Math.random() * 0.8})`;
+            bg.appendChild(div);
+        }
+    </script>
+</body>
+
+</html>
